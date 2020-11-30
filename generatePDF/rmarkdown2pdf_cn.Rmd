@@ -1,0 +1,127 @@
+---
+documentclass: ctexart
+header-includes:
+  # 调用ctex包，默认设置中文字体，默认字体为宋体，加粗为黑体，斜体为楷体
+  - \usepackage{ctex}
+  # 设置灰色阴影
+  - \usepackage{xcolor}
+  - \usepackage{framed}
+  # 设置行距
+  - \usepackage{setspace}
+  # 设置页面大小，设置页边距
+  - \usepackage{geometry}
+  - \geometry{a4paper,left=2cm,right=2cm,top=1cm,bottom=1cm}
+  # - \usepackage{tabu}
+
+output:
+  rticles::ctex:
+    keep_tex: true
+    fig_caption: no
+    number_sections: no
+    toc: no
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+library(kableExtra)
+library(tidyverse)
+library(openxlsx)
+#load("temp_env.Rdata")
+#load("ne.Rdata")
+```
+
+\colorlet{shadecolor}{gray!50}
+
+<!-- 设置行距 -->
+<!-- 居中显示 -->
+<!-- 设置字号：小三 -->
+<!-- 粗体显示 -->
+<!-- 根据institute变量显示标题 -->
+\singlespacing 
+\begin{center}
+\zihao{3}
+\textbf{`r institution`}
+\\
+\zihao{-3}
+\textbf{遗传代谢病串联质谱检测报告}
+\end{center}
+<!-- 加阴影 -->
+<!-- 设置字号：五号 -->
+\begin{shaded}
+\zihao{5}
+\textbf{样本信息：}
+\end{shaded}
+\doublespacing 
+\zihao{-5}
+\begin{tabu} to \linewidth {>{\raggedright}X>{\raggedright}X>{\raggedright}X>{\raggedright}X>{\raggedright}X>{\raggedright}X>{\raggedleft}X>{\raggedleft}X}
+\mbox{母亲姓名：} & \mbox{`r select_clinicalData$母亲姓名`} & \mbox{样本编码：} & `r select_clinicalData$样本编码` & \mbox{样本类型：} & \mbox{`r select_clinicalData$样本类型`} & \mbox{联系电话：} & \mbox{`r select_clinicalData$联系电话`} \\
+\mbox{受检者姓名：} & \mbox{`r select_clinicalData$受检者姓名`} & \mbox{采血日期：} & \mbox{`r as.Date(as.numeric(select_clinicalData$采血日期), origin = "1899-12-30")`} & \mbox{出生日期：} & \mbox{`r as.Date(as.numeric(select_clinicalData$出生日期), origin = "1899-12-30")`} & \mbox{检测日期：} & \mbox{`r as.Date(as.numeric(select_clinicalData$检测日期), origin = "1899-12-30")`} \\
+\mbox{受检者性别：} & \mbox{`r select_clinicalData$受检者性别`} & \mbox{住院号：} & \mbox{`r select_clinicalData$住院号`} & \mbox{送检医院：} & \multicolumn{2}{c}{`r select_clinicalData$送检医院`} \\
+\mbox{送检科室：} & \mbox{`r select_clinicalData$送检科室`} & & & \mbox{实验编号：} & \mbox{`r select_clinicalData$实验编号`} \\
+\end{tabu}
+<!-- # ```{r fig.showtext = TRUE, warning = FALSE, out.width = "100%"} -->
+<!-- # total_index <- c('母亲姓名：', '受检者姓名：', '受检者性别：', '送检科室：', -->
+<!-- #                  '样本编码：', '采血日期：', '住院号：', -->
+<!-- #                  '样本类型：', '出生日期：', '送检医院：', '实验编号：', -->
+<!-- #                  '联系电话：', '检测日期：') -->
+<!-- # blank_table <- tibble('Index1'=total_index[c(1,2,3,4)], -->
+<!-- #                       'Content1'=c('','','',''), -->
+<!-- #                       'Index2'=c(total_index[c(4,5,6)],''), -->
+<!-- #                       'Content2'=c('','','',''), -->
+<!-- #                       'Index3'=total_index[c(7,8,9,10)], -->
+<!-- #                       'Content3'=c('','','',''), -->
+<!-- #                       'Index4'=c(total_index[c(11,12,13)],''), -->
+<!-- #                       'Content4'=c('','','','')) -->
+<!-- # kable(blank_table, "latex", col.names = NULL, booktabs = T) %>% -->
+<!-- #   kable_styling(bootstrap_options = "striped", full_width = T, font_size = 8.5) -->
+<!-- # ``` -->
+<!--  -->
+\singlespacing 
+\begin{shaded}
+\zihao{5}
+\textbf{检测结果：}
+\end{shaded}
+\zihao{-5}
+```{r fig.showtext = TRUE, warning = FALSE, out.width = "100%", message=FALSE}
+table_index <- c('检测指标名称', '结果', '单位', '', '参考范围',
+                 '检测指标名称', '结果', '单位', '', '参考范围')
+select_column1Data <- select_column1Data %>%
+  select(name, result, unit, mark, "参考范围")
+select_column2Data <- select_column2Data %>%
+  select(name, result, unit, mark, "参考范围")
+total_table <- bind_cols(select_column1Data, select_column2Data) 
+
+names(total_table) <- table_index
+
+kable(total_table, format = "latex", longtable = TRUE, booktabs = TRUE, linesep = "") %>%
+  kable_styling(bootstrap_options = "bordered", full_width = T, font_size = 7.5) %>%
+    row_spec(0, bold = T) %>%
+    column_spec(c(1,6), width = "3.5cm") %>%
+    column_spec(c(5,10), width = "1.2cm") %>%
+    column_spec(c(4,9), width = "0.1cm") %>%
+    column_spec(c(2,7), width = "1.2cm") %>%
+    column_spec(c(3,8), width = "0.6cm")
+  
+```
+\zihao{5}
+\textbf{结果：} `r select_analysisData$"结果"`
+
+\vspace*{1\baselineskip} 
+
+\textbf{分析：} `r select_analysisData$"分析"` 
+\vspace*{1\baselineskip} 
+
+\begin{tabu} to \linewidth {>{\raggedright}X>{\raggedright}X>{\raggedright}X}
+\textbf{检测人：} & \textbf{审核人：} & \textbf{报告日期：} \\
+\end{tabu}
+注：本报告仅对送检样本负责，不能作为确诊依据，结果供临床参考。由于婴儿个体生理差异和其他因素的影响，即使筛查结果未见异常，也请定期进行儿童保健检查，如发现孩子有异常反应请及时到医院检查咨询。
+<!-- footnotetext without number is from                                     -->
+<!-- https://tex.stackexchange.com/questions/30720/footnote-without-a-marker -->
+\newcommand\extrafootertext[1]{%
+    \bgroup
+    \renewcommand\thefootnote{\fnsymbol{footnote}}%
+    \renewcommand\thempfootnote{\fnsymbol{mpfootnote}}%
+    \footnotetext[0]{#1}%
+    \egroup
+}
+\extrafootertext{`r institutionAddress`}

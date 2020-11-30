@@ -29,6 +29,7 @@ referFile <- config %>% select(referFile) %>% pull() %>% normalizePath()
 yearInfoFile <- config %>% select(yearInfoFile) %>% pull() %>% normalizePath()
 dataType <- config %>% select(dataType) %>% pull() %>% as.character()
 digits <- config %>% select(digits) %>% pull() %>% as.numeric()
+up_down <- config %>% select(up_down) %>% pull() %>% as.character()
 saveDir <- config %>% select(saveDir) %>% pull() %>% normalizePath()
 
 t <- intermedReturn(msDataFile = msDataFile,
@@ -36,6 +37,7 @@ t <- intermedReturn(msDataFile = msDataFile,
                     yearInfoFile = yearInfoFile,
                     dataType = dataType,
                     digits = digits,
+                    up_down = up_down,
                     saveDir = saveDir)
 
 write_excel_csv(t$newBorn_return,paste(saveDir,"newborn.csv",sep = ""))

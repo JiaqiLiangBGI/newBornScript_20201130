@@ -1,7 +1,7 @@
-.bornResult <- function(born,msData,rangeData) {
+.bornResult <- function(born,msData,rangeData,up_down) {
   
-  ref <- rangeData  %>% arrange(desc(Index)) %>% 
-    select(item,Index) %>% 
+  ref <- rangeData  %>% arrange(desc(Index)) %>%
+    select(item,Index) %>%
     pivot_wider(names_from = "item",values_from = "Index")
   
   msData <- msData %>% select(sampleId,colnames(ref))
@@ -10,12 +10,50 @@
     left_join(msData,by = c("样本编码" = "sampleId")) %>%
     select(-age) %>%
     pivot_longer(cols = -`样本编码`,names_to = "item",values_to = "value") %>%
-    left_join(rangeData,by = "item") %>%
-    mutate(result = if_else(value > up,"指标升高",ifelse(value < low,"指标降低","pass"))) %>%
-    mutate(value = if_else(result == "指标升高",str_c("↑",as.character(value),sep = ""),
-                           if_else(result == "指标降低",str_c("↓",as.character(value),sep = ""),as.character(value)))) %>%
-    #mutate(result = str_c(item,result,sep = "")) %>%
-    select(`样本编码`,item,value,result)
+    left_join(rangeData,by = "item")
+  # mutate(result = map(.x = value,
+  #                     .f = ~if_else(str_detect(value,"-"),"",
+  #                                              if_else(as.numeric(value) > up,"指标升高",
+  #                                                                               ifelse(as.numeric(value) < low,"指标降低","pass")))))
+  # mutate(result = if_else(is.infinite(value),"",
+  #                         if_else(value > up,"指标升高",if_else(value < low,"指标降低","pass")))) %>%
+  # mutate(value = if_else(is.infinite(value),"-",as.character(value)))
+  # mutate(value = if_else(result == "指标升高",str_c("↑",as.character(value),sep = ""),
+  #                        if_else(result == "指标降低",str_c("↓",as.character(value),sep = ""),as.character(value)))) %>%
+  # #mutate(result = str_c(item,result,sep = "")) %>%
+  # select(`样本编码`,item,value,result)
+  #up_down <- up_down
+  if (up_down == 'up') {
+    bornData <- bornData %>% 
+      mutate(result = if_else(is.infinite(value),"pass",
+                              if_else(value > up,"指标升高","pass"))) %>%
+      mutate(value = if_else(is.infinite(value),"-",as.character(value))) %>%
+      mutate(value = if_else(result == "指标升高",str_c("↑",as.character(value),sep = ""),as.character(value))) %>%
+      select(`样本编码`,item,value,result)
+  }else if (up_down == "down") {
+    bornData <- bornData %>% 
+      mutate(result = if_else(is.infinite(value),"pass",
+                              if_else(value < low,"指标降低","pass"))) %>%
+      mutate(value = if_else(is.infinite(value),"-",as.character(value))) %>%
+      mutate(value = if_else(result == "指标降低",str_c("↓",as.character(value),sep = ""),as.character(value))) %>%
+      select(`样本编码`,item,value,result)
+  }else if (up_down == "all") {
+    bornData <- bornData %>% 
+      mutate(result = if_else(is.infinite(value),"pass",
+                              if_else(value > up,"指标升高",if_else(value < low,"指标降低","pass")))) %>%
+      mutate(value = if_else(is.infinite(value),"-",as.character(value))) %>%
+      mutate(value = if_else(result == "指标升高",str_c("↑",as.character(value),sep = ""),
+                             if_else(result == "指标降低",str_c("↓",as.character(value),sep = ""),as.character(value)))) %>%
+      select(`样本编码`,item,value,result)
+  }else if (up_down == "non") {
+    bornData <- bornData %>% 
+      mutate(result = if_else(is.infinite(value),"pass","pass")) %>%
+      mutate(value = if_else(is.infinite(value),"-",as.character(value))) %>%
+      mutate(value = as.character(value)) %>%
+      select(`样本编码`,item,value,result)
+  }else {
+    stop("illegal up_down")
+  }
   
   born_result <- bornData %>% 
     select(-value) %>% 
@@ -33,7 +71,9 @@
   bornTotal <- bornData %>% select(-result) %>%
     pivot_wider(names_from = "item",values_from = "value") %>%
     left_join(born_result,by = "样本编码") %>%
-    mutate(`分析` = if_else(is.na(`结果`),"本次检测结果未见明显遗传代谢病异常。",""))
+    # mutate(`分析` = if_else(is.na(`结果`),"本次检测结果未见明显异常","")) %>%
+    mutate(`分析` = "本次检测结果未见明显异常") %>%
+    mutate(`结果` = if_else(is.na(`结果`),"本次检测结果未见明显异常",`结果`))
   
   addBornRange <- rangeData %>% 
     select(-Index) %>%
@@ -43,7 +83,7 @@
     mutate(`结果` = "",`分析` = '') %>% 
     select(colnames(bornTotal))
   
-  born_return <- addBornRange %>% bind_rows(bornTotal) 
+  born_return <- addBornRange %>% bind_rows(bornTotal)
   return(born_return)
 }
 
@@ -52,6 +92,7 @@ intermedReturn <- function(msDataFile,
                            yearInfoFile,
                            dataType,
                            digits,
+                           up_down,
                            saveDir) {
   
   #read ms data
@@ -61,7 +102,7 @@ intermedReturn <- function(msDataFile,
       select(-`Date Acquired`,-`Tray:Vial`) %>%
       filter(!str_detect(sampleId,"Criteria")) %>%
       mutate_at(.vars = -1,as.numeric)
-  }else if (dataType == "scix") {
+  }else if (dataType == "sciex") {
     msData <- read_excel(path = msDataFile,sheet = 1,col_names = T,skip = 2) %>% 
       filter(!is.na(`Sample Name`)) %>%
       select(-`File Name`,-`Sample Index`,-`Sample Type`,-`Comment`,-`Failed Tests`) %>%
@@ -74,12 +115,15 @@ intermedReturn <- function(msDataFile,
       mutate(value = as.numeric(value)) %>%
       pivot_wider(names_from = "item",values_from = "value")
   }else if (dataType == "waters") {
-    msData <- read_excel(path = msDataFile) %>%
-      select(`File Name`,`Test Name`,`Calculated Conc`) %>%
-      rename(c("sampleId" = "File Name","item" = "Test Name","value" = "Calculated Conc")) %>%
-      filter(!is.na(sampleId)) %>%
-      pivot_wider(names_from = "item",values_from = "value") %>%
+    msData<-read_tsv(file = msDataFile) %>% 
+      rename(c("sampleId"="X1")) %>% 
       mutate_at(.vars = -1,as.numeric)
+    # msData <- read_excel(path = msDataFile) %>%
+    #   select(`File Name`,`Test Name`,`Calculated Conc`) %>%
+    #   rename(c("sampleId" = "File Name","item" = "Test Name","value" = "Calculated Conc")) %>%
+    #   filter(!is.na(sampleId)) %>%
+    #   pivot_wider(names_from = "item",values_from = "value") %>%
+    #   mutate_at(.vars = -1,as.numeric)
   }else{
     stop("illegal dataType")
   }
@@ -142,8 +186,9 @@ intermedReturn <- function(msDataFile,
   unNewBorn <- yearInfo %>% filter(age>28)
   
   #write csv
-  newBorn_return <- .bornResult(born = newborn,msData = msData,rangeData = newBornRange)
-  unNewBorn_return <- .bornResult(born = unNewBorn,msData = msData,rangeData = unNewBornRange)
+  up_down = up_down
+  newBorn_return <- .bornResult(born = newborn,msData = msData,rangeData = newBornRange,up_down = up_down)
+  unNewBorn_return <- .bornResult(born = unNewBorn,msData = msData,rangeData = unNewBornRange,up_down = up_down)
   # write_excel_csv(newBorn_return,path = paste(saveDir,"newborn.csv",sep = ""))
   # write_excel_csv(unNewBorn_return,path = paste(saveDir,"nonnewborn.csv",sep = ""))
   return(intermedResult = list(newBorn_return = newBorn_return,unNewBorn_return = unNewBorn_return))

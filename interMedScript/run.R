@@ -20,6 +20,7 @@ library(tidyr)
 library(readxl)
 library(readr)
 library(stringr)
+configFile <- "D:/newbornpdf/interMed/config.txt"
 config <- read_tsv(configFile,col_names = c("name","value"),
                    col_types = cols(name = col_character(),value = col_character())) %>%
   pivot_wider(names_from = "name",values_from = "value")
@@ -40,5 +41,15 @@ t <- intermedReturn(msDataFile = msDataFile,
                     up_down = up_down,
                     saveDir = saveDir)
 
-write_excel_csv(t$newBorn_return,paste(saveDir,"newborn.csv",sep = ""))
-write_excel_csv(t$unNewBorn_return,paste(saveDir,"nonnewborn.csv",sep = ""))
+if (is.null(t$newBorn_return)) {
+  message("there is no newborn sample")
+}else {
+  write_excel_csv(t$newBorn_return,paste(saveDir,"newborn.csv",sep = ""))
+}
+if (is.null(t$unNewBorn_return)) {
+  message("there is no non-newborn sample")
+}else {
+  write_excel_csv(t$unNewBorn_return,paste(saveDir,"nonnewborn.csv",sep = ""))
+}
+
+

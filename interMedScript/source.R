@@ -1,9 +1,20 @@
+#'.bornResult
+#'@description generate newborn or non-newborn result
+#'@export
+#'@importFrom select arrange mutate group_by distinct filter
+#'@importFrom pivot_longer pivot_wider
+#'@importFrom left_join
+#'@param born dataframe contains newborn samples or non-newborn samples
+#'@param msData dataframe contains values
+#'@param rangeData dataframe contains newborn samples or non-newborn range
+#'@param up_down up,down,all,non
+#'@return dataframe contains intermed result
 .bornResult <- function(born,msData,rangeData,up_down) {
   
   ref <- rangeData  %>% arrange(desc(Index)) %>%
     select(item,Index) %>%
     pivot_wider(names_from = "item",values_from = "Index")
-  
+
   msData <- msData %>% select(sampleId,colnames(ref))
   #new born
   bornData <- born %>%
@@ -11,17 +22,17 @@
     select(-age) %>%
     pivot_longer(cols = -`样本编码`,names_to = "item",values_to = "value") %>%
     left_join(rangeData,by = "item")
-  # mutate(result = map(.x = value,
-  #                     .f = ~if_else(str_detect(value,"-"),"",
-  #                                              if_else(as.numeric(value) > up,"指标升高",
-  #                                                                               ifelse(as.numeric(value) < low,"指标降低","pass")))))
-  # mutate(result = if_else(is.infinite(value),"",
-  #                         if_else(value > up,"指标升高",if_else(value < low,"指标降低","pass")))) %>%
-  # mutate(value = if_else(is.infinite(value),"-",as.character(value)))
-  # mutate(value = if_else(result == "指标升高",str_c("↑",as.character(value),sep = ""),
-  #                        if_else(result == "指标降低",str_c("↓",as.character(value),sep = ""),as.character(value)))) %>%
-  # #mutate(result = str_c(item,result,sep = "")) %>%
-  # select(`样本编码`,item,value,result)
+    # mutate(result = map(.x = value,
+    #                     .f = ~if_else(str_detect(value,"-"),"",
+    #                                              if_else(as.numeric(value) > up,"指标升高",
+    #                                                                               ifelse(as.numeric(value) < low,"指标降低","pass")))))
+    # mutate(result = if_else(is.infinite(value),"",
+    #                         if_else(value > up,"指标升高",if_else(value < low,"指标降低","pass")))) %>%
+    # mutate(value = if_else(is.infinite(value),"-",as.character(value)))
+    # mutate(value = if_else(result == "指标升高",str_c("↑",as.character(value),sep = ""),
+    #                        if_else(result == "指标降低",str_c("↓",as.character(value),sep = ""),as.character(value)))) %>%
+    # #mutate(result = str_c(item,result,sep = "")) %>%
+    # select(`样本编码`,item,value,result)
   #up_down <- up_down
   if (up_down == 'up') {
     bornData <- bornData %>% 
@@ -87,6 +98,20 @@
   return(born_return)
 }
 
+#' intermedResult
+#' @description generate both newborn and non-newborn intermed result
+#' @export
+#' @importFrom read_excel read_tsv
+#' @importFrom select filter mutate rename
+#' @importFrom pivot_longer pivot_wider
+#' @importFrom left_join
+#' @param msDataFile path and file name contains ms data
+#' @param referFle path and file name contains reference range
+#' @param yearInfoFile path and file name contains samples' year info
+#' @param dataType waters ,daojin ,sciex
+#' @param digits significant digit of values
+#' @param up_down up,down,all,non
+#' @param saveDir where to save the files
 intermedReturn <- function(msDataFile,
                            referFile,
                            yearInfoFile,
@@ -182,13 +207,21 @@ intermedReturn <- function(msDataFile,
   unNewBornRange <- reference %>% 
     select(Index,item,unNewBornLow,unNewBornUp) %>%
     rename(c("low" = "unNewBornLow","up" = "unNewBornUp"))
-  newborn <- yearInfo %>% filter(age>0,age<=28)
+  newborn <- yearInfo %>% filter(age>=0,age<=28)
   unNewBorn <- yearInfo %>% filter(age>28)
   
   #write csv
   up_down = up_down
-  newBorn_return <- .bornResult(born = newborn,msData = msData,rangeData = newBornRange,up_down = up_down)
-  unNewBorn_return <- .bornResult(born = unNewBorn,msData = msData,rangeData = unNewBornRange,up_down = up_down)
+  if (nrow(newborn) == 0) {
+    newBorn_return <- NULL
+  } else {
+    newBorn_return <- .bornResult(born = newborn,msData = msData,rangeData = newBornRange,up_down = up_down)
+  }
+  if (nrow(unNewBorn) == 0) {
+    unNewBorn_return <- NULL
+  } else {
+    unNewBorn_return <- .bornResult(born = unNewBorn,msData = msData,rangeData = unNewBornRange,up_down = up_down)
+  }
   # write_excel_csv(newBorn_return,path = paste(saveDir,"newborn.csv",sep = ""))
   # write_excel_csv(unNewBorn_return,path = paste(saveDir,"nonnewborn.csv",sep = ""))
   return(intermedResult = list(newBorn_return = newBorn_return,unNewBorn_return = unNewBorn_return))

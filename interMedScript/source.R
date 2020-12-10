@@ -11,90 +11,78 @@
 #'@return dataframe contains intermed result
 .bornResult <- function(born,msData,rangeData,up_down) {
   
-  ref <- rangeData  %>% arrange(desc(Index)) %>%
-    select(item,Index) %>%
-    pivot_wider(names_from = "item",values_from = "Index")
-
-  msData <- msData %>% select(sampleId,colnames(ref))
-  #new born
-  bornData <- born %>%
-    left_join(msData,by = c("样本编码" = "sampleId")) %>%
-    select(-age) %>%
-    pivot_longer(cols = -`样本编码`,names_to = "item",values_to = "value") %>%
-    left_join(rangeData,by = "item")
-    # mutate(result = map(.x = value,
-    #                     .f = ~if_else(str_detect(value,"-"),"",
-    #                                              if_else(as.numeric(value) > up,"指标升高",
-    #                                                                               ifelse(as.numeric(value) < low,"指标降低","pass")))))
-    # mutate(result = if_else(is.infinite(value),"",
-    #                         if_else(value > up,"指标升高",if_else(value < low,"指标降低","pass")))) %>%
-    # mutate(value = if_else(is.infinite(value),"-",as.character(value)))
-    # mutate(value = if_else(result == "指标升高",str_c("↑",as.character(value),sep = ""),
-    #                        if_else(result == "指标降低",str_c("↓",as.character(value),sep = ""),as.character(value)))) %>%
-    # #mutate(result = str_c(item,result,sep = "")) %>%
-    # select(`样本编码`,item,value,result)
-  #up_down <- up_down
-  if (up_down == 'up') {
-    bornData <- bornData %>% 
-      mutate(result = if_else(is.infinite(value),"pass",
-                              if_else(value > up,"指标升高","pass"))) %>%
-      mutate(value = if_else(is.infinite(value),"-",as.character(value))) %>%
-      mutate(value = if_else(result == "指标升高",str_c("↑",as.character(value),sep = ""),as.character(value))) %>%
-      select(`样本编码`,item,value,result)
-  }else if (up_down == "down") {
-    bornData <- bornData %>% 
-      mutate(result = if_else(is.infinite(value),"pass",
-                              if_else(value < low,"指标降低","pass"))) %>%
-      mutate(value = if_else(is.infinite(value),"-",as.character(value))) %>%
-      mutate(value = if_else(result == "指标降低",str_c("↓",as.character(value),sep = ""),as.character(value))) %>%
-      select(`样本编码`,item,value,result)
-  }else if (up_down == "all") {
-    bornData <- bornData %>% 
-      mutate(result = if_else(is.infinite(value),"pass",
-                              if_else(value > up,"指标升高",if_else(value < low,"指标降低","pass")))) %>%
-      mutate(value = if_else(is.infinite(value),"-",as.character(value))) %>%
-      mutate(value = if_else(result == "指标升高",str_c("↑",as.character(value),sep = ""),
-                             if_else(result == "指标降低",str_c("↓",as.character(value),sep = ""),as.character(value)))) %>%
-      select(`样本编码`,item,value,result)
-  }else if (up_down == "non") {
-    bornData <- bornData %>% 
-      mutate(result = if_else(is.infinite(value),"pass","pass")) %>%
-      mutate(value = if_else(is.infinite(value),"-",as.character(value))) %>%
-      mutate(value = as.character(value)) %>%
-      select(`样本编码`,item,value,result)
-  }else {
-    stop("illegal up_down")
-  }
-  
-  born_result <- bornData %>% 
-    select(-value) %>% 
-    group_by(`样本编码`,result) %>% 
-    mutate(`Result` = str_c(item,collapse = ",")) %>%
-    ungroup() %>% 
-    select(-item) %>%
-    distinct() %>%
-    filter(result != "pass") %>%
-    mutate(`Result` = str_c(`Result`,result,sep = "")) %>%
-    group_by(`样本编码`) %>%
-    mutate(`结果` = str_c(Result,collapse = ",")) %>% ungroup() %>% 
-    select(-result,-Result) %>% distinct()
-  
-  bornTotal <- bornData %>% select(-result) %>%
-    pivot_wider(names_from = "item",values_from = "value") %>%
-    left_join(born_result,by = "样本编码") %>%
-    # mutate(`分析` = if_else(is.na(`结果`),"本次检测结果未见明显异常","")) %>%
-    mutate(`分析` = "本次检测结果未见明显异常") %>%
-    mutate(`结果` = if_else(is.na(`结果`),"本次检测结果未见明显异常",`结果`))
-  
-  addBornRange <- rangeData %>% 
+  addBornRange <- rangeData %>%
+    arrange(desc(Index)) %>%
     select(-Index) %>%
     pivot_longer(cols = -item,names_to = "样本编码",values_to = "value") %>%
     mutate(value = as.character(value)) %>%
     pivot_wider(names_from = "item",values_from = "value") %>%
-    mutate(`结果` = "",`分析` = '') %>% 
-    select(colnames(bornTotal))
+    mutate(`结果` = "",`分析` = '')
   
-  born_return <- addBornRange %>% bind_rows(bornTotal)
+  if (nrow(born) > 0) {
+    bornData <- born %>%
+      left_join(msData,by = c("样本编码" = "sampleId")) %>%
+      select(-age) %>%
+      pivot_longer(cols = -`样本编码`,names_to = "item",values_to = "value") %>%
+      left_join(rangeData,by = "item")
+
+    if (up_down == 'up') {
+      bornData <- bornData %>% 
+        mutate(result = if_else(is.infinite(value),"pass",
+                                if_else(value > up,"指标升高","pass"))) %>%
+        mutate(value = if_else(is.infinite(value),"-",as.character(value))) %>%
+        mutate(value = if_else(result == "指标升高",str_c("↑",as.character(value),sep = ""),as.character(value))) %>%
+        select(`样本编码`,item,value,result)
+    }else if (up_down == "down") {
+      bornData <- bornData %>% 
+        mutate(result = if_else(is.infinite(value),"pass",
+                                if_else(value < low,"指标降低","pass"))) %>%
+        mutate(value = if_else(is.infinite(value),"-",as.character(value))) %>%
+        mutate(value = if_else(result == "指标降低",str_c("↓",as.character(value),sep = ""),as.character(value))) %>%
+        select(`样本编码`,item,value,result)
+    }else if (up_down == "all") {
+      bornData <- bornData %>% 
+        mutate(result = if_else(is.infinite(value),"pass",
+                                if_else(value > up,"指标升高",if_else(value < low,"指标降低","pass")))) %>%
+        mutate(value = if_else(is.infinite(value),"-",as.character(value))) %>%
+        mutate(value = if_else(result == "指标升高",str_c("↑",as.character(value),sep = ""),
+                               if_else(result == "指标降低",str_c("↓",as.character(value),sep = ""),as.character(value)))) %>%
+        select(`样本编码`,item,value,result)
+    }else if (up_down == "non") {
+      bornData <- bornData %>% 
+        mutate(result = if_else(is.infinite(value),"pass","pass")) %>%
+        mutate(value = if_else(is.infinite(value),"-",as.character(value))) %>%
+        mutate(value = as.character(value)) %>%
+        select(`样本编码`,item,value,result)
+    }else {
+      stop("illegal up_down")
+    }
+    
+    born_result <- bornData %>% 
+      select(-value) %>% 
+      group_by(`样本编码`,result) %>% 
+      mutate(`Result` = str_c(item,collapse = ",")) %>%
+      ungroup() %>% 
+      select(-item) %>%
+      distinct() %>%
+      filter(result != "pass") %>%
+      mutate(`Result` = str_c(`Result`,result,sep = "")) %>%
+      group_by(`样本编码`) %>%
+      mutate(`结果` = str_c(Result,collapse = ",")) %>% ungroup() %>% 
+      select(-result,-Result) %>% distinct()
+    
+    bornTotal <- bornData %>% select(-result) %>%
+      pivot_wider(names_from = "item",values_from = "value") %>%
+      left_join(born_result,by = "样本编码") %>%
+      # mutate(`分析` = if_else(is.na(`结果`),"本次检测结果未见明显异常","")) %>%
+      mutate(`分析` = "本次检测结果未见明显异常") %>%
+      mutate(`结果` = if_else(is.na(`结果`),"本次检测结果未见明显异常",`结果`)) %>%
+      select(colnames(addBornRange))
+    
+    born_return <- addBornRange %>% bind_rows(bornTotal)
+  } else {
+    born_return <- addBornRange
+  }
   return(born_return)
 }
 
@@ -209,19 +197,20 @@ intermedReturn <- function(msDataFile,
     rename(c("low" = "unNewBornLow","up" = "unNewBornUp"))
   newborn <- yearInfo %>% filter(age>=0,age<=28)
   unNewBorn <- yearInfo %>% filter(age>28)
-  
+  newBorn_return <- .bornResult(born = newborn,msData = msData,rangeData = newBornRange,up_down = up_down)
+  unNewBorn_return <- .bornResult(born = unNewBorn,msData = msData,rangeData = unNewBornRange,up_down = up_down)
   #write csv
-  up_down = up_down
-  if (nrow(newborn) == 0) {
-    newBorn_return <- NULL
-  } else {
-    newBorn_return <- .bornResult(born = newborn,msData = msData,rangeData = newBornRange,up_down = up_down)
-  }
-  if (nrow(unNewBorn) == 0) {
-    unNewBorn_return <- NULL
-  } else {
-    unNewBorn_return <- .bornResult(born = unNewBorn,msData = msData,rangeData = unNewBornRange,up_down = up_down)
-  }
+  # up_down = up_down
+  # if (nrow(newborn) == 0) {
+  #   newBorn_return <- NULL
+  # } else {
+  #   newBorn_return <- .bornResult(born = newborn,msData = msData,rangeData = newBornRange,up_down = up_down)
+  # }
+  # if (nrow(unNewBorn) == 0) {
+  #   unNewBorn_return <- NULL
+  # } else {
+  #   unNewBorn_return <- .bornResult(born = unNewBorn,msData = msData,rangeData = unNewBornRange,up_down = up_down)
+  # }
   # write_excel_csv(newBorn_return,path = paste(saveDir,"newborn.csv",sep = ""))
   # write_excel_csv(unNewBorn_return,path = paste(saveDir,"nonnewborn.csv",sep = ""))
   return(intermedResult = list(newBorn_return = newBorn_return,unNewBorn_return = unNewBorn_return))

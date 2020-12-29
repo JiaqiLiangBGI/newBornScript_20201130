@@ -51,7 +51,7 @@ tranferFormat <- function(file,date) {
   
   #total TKI items
   totalItems <- data.frame(compoundId = c("Compound 1","Compound 2",'Compound 3',"Compound 4","Compound 5","Compound 6",'Compound 7',"Compound 8","Compound 9"),
-                           items = c('IMA','SUN','SU1226','CRIZ','PAZ','GEF','NIL','AXIT','VEM'),stringsAsFactors = F)
+                           items = c('IMA','SNTN1','SU1226','KZTN','PZPN','JFTN','NLTN','AXTN','WMFN'),stringsAsFactors = F)
   #select existing items in tki_data
   totalSample <- tki_data %>% 
     filter(!is.na(`IS Name`),`IS Name` != "(No IS)",str_detect(`Sample Name`,"[0-9]{7}"))

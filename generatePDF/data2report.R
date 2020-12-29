@@ -75,16 +75,24 @@ render_to_pdf_report <- function(referenceIndicatorFile = reference,
   rangeData <- totalData %>% head(2) %>%
     pivot_longer(names_to = "indicator",
                  values_to = "values",
-                 -`样本编码`) %>%
-    select(-`样本编码`) %>%
-    filter(!(indicator %in% c("结果", "分析"))) %>%
-    group_by(indicator) %>%
-    summarise(`参考范围`=str_c(sort(`values`),collapse = "-"), .groups = "drop")
+                 -`样本编码`) %>% filter(!(indicator %in% c("结果", "分析"))) %>%
+    pivot_wider(names_from = `样本编码`,values_from = "values") %>%
+    mutate(`参考范围` = str_c(low,up,sep = "-")) %>% 
+    select(indicator,`参考范围`)
+  # rangeData <- totalData %>% head(2) %>%
+  #   pivot_longer(names_to = "indicator",
+  #                values_to = "values",
+  #                -`样本编码`) %>%
+  #   select(-`样本编码`) %>%
+  #   filter(!(indicator %in% c("结果", "分析"))) %>%
+  #   group_by(indicator) %>%
+  #   summarise(`参考范围`=str_c(sort(`values`),collapse = "-"), .groups = "drop")
     
   sampleData <- totalData %>% tail(-2) %>%
     pivot_longer(names_to = "indicator",
                  values_to = "values",-`样本编码`) %>%
-    filter(!(indicator %in% c("结果", "分析")))
+    filter(!(indicator %in% c("结果", "分析"))) %>%
+    mutate(`样本编码` = map_chr(.x = `样本编码`,.f = ~if_else(str_detect(.x,"-"),str_split(.x,"-")[[1]][2],.x)))
     
   column1_final <- left_join(reference_indicator_column1_final, sampleData, by = "indicator") %>%
     left_join(., rangeData, by = c("indicator"))
@@ -108,7 +116,8 @@ render_to_pdf_report <- function(referenceIndicatorFile = reference,
     as_tibble() %>%
     pivot_longer(names_to = "clinicalInfo",
                  values_to = "values",
-                 -1)
+                 -1) %>%
+    mutate(`样本编码` = map_chr(.x = `样本编码`,.f = ~if_else(str_detect(.x,"-"),str_split(.x,"-")[[1]][2],.x)))
   
   # data prepare ends
   if(sampleID=='all'){
@@ -118,7 +127,9 @@ render_to_pdf_report <- function(referenceIndicatorFile = reference,
         mutate(`样本编码` = str_replace(`样本编码`,"_","\\\\_"),
                `values` = str_replace(`values`,"_","\\\\_")) %>%
         pivot_wider(names_from = "clinicalInfo",
-                    values_from = "values")
+                    values_from = "values") %>%
+        mutate(`实验编号` = map_chr(.x = `实验编号`,.f = ~if_else(str_detect(.x,"-"),str_split(.x,"-")[[1]][2],.x)))
+
       select_column1Data <- column1_final %>%
         filter(`样本编码` == select_sampleID) %>%
         select(-indicator,-`样本编码`) %>%
@@ -166,7 +177,9 @@ render_to_pdf_report <- function(referenceIndicatorFile = reference,
       mutate(`样本编码` = str_replace(`样本编码`,"_","\\\\_"),
              `values` = str_replace(`values`,"_","\\\\_")) %>%
       pivot_wider(names_from = "clinicalInfo",
-                  values_from = "values")
+                  values_from = "values") %>%
+      mutate(`实验编号` = map_chr(.x = `实验编号`,.f = ~if_else(str_detect(.x,"-"),str_split(.x,"-")[[1]][2],.x)))
+    
     select_column1Data <- column1_final %>%
       filter(`样本编码` == sampleID) %>%
       select(-indicator,-`样本编码`) %>%

@@ -27,7 +27,6 @@ library(kableExtra)
 library(tidyverse)
 library(openxlsx)
 #load("temp_env.Rdata")
-#load("ne.Rdata")
 ```
 
 \colorlet{shadecolor}{gray!50}
@@ -83,24 +82,24 @@ library(openxlsx)
 \end{shaded}
 \zihao{-5}
 ```{r fig.showtext = TRUE, warning = FALSE, out.width = "100%", message=FALSE}
-table_index <- c('检测指标名称', '结果', '单位', '', '参考范围',
-                 '检测指标名称', '结果', '单位', '', '参考范围')
+table_index <- c('检测指标名称', '结果(μM)', '', '参考范围',
+                 '检测指标名称', '结果(μM)', '', '参考范围')
 select_column1Data <- select_column1Data %>%
-  select(name, result, unit, mark, "参考范围")
+  select(name, result, mark, "参考范围")
 select_column2Data <- select_column2Data %>%
-  select(name, result, unit, mark, "参考范围")
+  select(name, result, mark, "参考范围")
 total_table <- bind_cols(select_column1Data, select_column2Data) 
 
 names(total_table) <- table_index
 
 kable(total_table, format = "latex", longtable = TRUE, booktabs = TRUE, linesep = "") %>%
-  kable_styling(bootstrap_options = "bordered", full_width = T, font_size = 7.5) %>%
+  kable_styling(bootstrap_options = "bordered", full_width = T, font_size = 8.0) %>%
     row_spec(0, bold = T) %>%
-    column_spec(c(1,6), width = "3.5cm") %>%
-    column_spec(c(5,10), width = "1.2cm") %>%
-    column_spec(c(4,9), width = "0.1cm") %>%
-    column_spec(c(2,7), width = "1.2cm") %>%
-    column_spec(c(3,8), width = "0.6cm")
+    column_spec(c(1,5), width = "4.0cm") %>%
+    column_spec(c(4,8), width = "1.2cm") %>%
+    column_spec(c(3,7), width = "0.1cm") %>%
+    #column_spec(c(2,7), width = "1.2cm") %>%
+    column_spec(c(2,6), width = "1.5cm")
   
 ```
 \zihao{5}
@@ -112,7 +111,7 @@ kable(total_table, format = "latex", longtable = TRUE, booktabs = TRUE, linesep 
 \vspace*{1\baselineskip} 
 
 \begin{tabu} to \linewidth {>{\raggedright}X>{\raggedright}X>{\raggedright}X}
-\textbf{检测人：} & \textbf{审核人：} & \textbf{报告日期：} \\
+\textbf{检测人：秦妮} & \textbf{审核人：杨雪} & \textbf{报告日期：2020-12-29} \\
 \end{tabu}
 注：本报告仅对送检样本负责，不能作为确诊依据，结果供临床参考。由于婴儿个体生理差异和其他因素的影响，即使筛查结果未见异常，也请定期进行儿童保健检查，如发现孩子有异常反应请及时到医院检查咨询。
 <!-- footnotetext without number is from                                     -->

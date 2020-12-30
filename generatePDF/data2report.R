@@ -43,7 +43,9 @@ render_to_pdf_report <- function(referenceIndicatorFile = reference,
                                  clinicalInfoFile = clinical_info,
                                  institution = '贵阳市新生儿疾病筛查中心',
                                  institutionAddress = '报告单位：贵阳市新生儿疾病筛查中心，地址：贵阳市瑞金南路63号贵阳市妇幼保健院医技楼8楼。',
-                                 outputDir = './'){
+                                 outputDir = './',
+                                 detectorFile,
+                                 assesserFile){
   
   # read reference to get indicators list (and their order)
   reference_tibble <- read_xlsx(path=referenceIndicatorFile, sheet = 1, col_names = F, skip = 3) %>%
@@ -168,7 +170,7 @@ render_to_pdf_report <- function(referenceIndicatorFile = reference,
                         institution,
                         institutionAddress,
                         paste0(select_sampleID, ".pdf"),
-                        outputDir)
+                        outputDir,detectorFile,assesserFile)
     }
   }else if(sampleID %in% clinicalInfo$`样本编码`){
     # sampleID <- '1-A-1-2'
@@ -218,7 +220,7 @@ render_to_pdf_report <- function(referenceIndicatorFile = reference,
                       institution,
                       institutionAddress,
                       paste0(sampleID, ".pdf"),
-                      outputDir)
+                      outputDir,detectorFile,assesserFile)
   }else{
     stop(paste0("没有找到",sampleID,"的数据！"))
   }
@@ -246,7 +248,7 @@ render_single_pdf <- function(select_clinicalData,
                               institution,
                               institutionAddress,
                               fileName,
-                              outputDir,
+                              outputDir,detectorFile,assesserFile,
                               format = 'pdf_document'){
   # rangeData <- totalData %>% head(2)
   # sampleData <- totalData %>% tail(-2) %>% head(1)
@@ -263,6 +265,8 @@ render_single_pdf <- function(select_clinicalData,
   ne$select_analysisData <- select_analysisData
   ne$institution <- institution
   ne$institutionAddress <- institutionAddress
+  ne$detectorFile <- detectorFile
+  ne$assesserFile <-assesserFile
   Rscript_call(
     rmarkdown::render,
     list(input = "./rmarkdown2pdf_cn.Rmd", 

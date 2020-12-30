@@ -10,6 +10,7 @@ header-includes:
   - \usepackage{setspace}
   # 设置页面大小，设置页边距
   - \usepackage{geometry}
+  - \usepackage{graphicx}
   - \geometry{a4paper,left=2cm,right=2cm,top=1cm,bottom=1cm}
   # - \usepackage{tabu}
 
@@ -26,6 +27,7 @@ knitr::opts_chunk$set(echo = FALSE)
 library(kableExtra)
 library(tidyverse)
 library(openxlsx)
+library(xfun)
 #load("temp_env.Rdata")
 ```
 
@@ -110,8 +112,8 @@ kable(total_table, format = "latex", longtable = TRUE, booktabs = TRUE, linesep 
 \textbf{分析：} `r select_analysisData$"分析"` 
 \vspace*{1\baselineskip} 
 
-\begin{tabu} to \linewidth {>{\raggedright}X>{\raggedright}X>{\raggedright}X}
-\textbf{检测人：秦妮} & \textbf{审核人：杨雪} & \textbf{报告日期：2020-12-29} \\
+\begin{tabu} to \linewidth {>{\raggedright}X>{\raggedright}X>{\raggedright}X>{\raggedright}X>{\raggedright}X>{\raggedright}X}
+\textbf{检测人：} & \graphicspath{{`r normalize_path(detectorFile)`}}\includegraphics{`r str_split(basename(detectorFile),"\\.")[[1]][1]`} & \textbf{审核人：} & \graphicspath{{`r normalize_path(assesserFile)`}}\includegraphics{`r str_split(basename(assesserFile),"\\.")[[1]][1]`} & \textbf{报告日期：} & {`r Sys.Date()`}\\
 \end{tabu}
 注：本报告仅对送检样本负责，不能作为确诊依据，结果供临床参考。由于婴儿个体生理差异和其他因素的影响，即使筛查结果未见异常，也请定期进行儿童保健检查，如发现孩子有异常反应请及时到医院检查咨询。
 <!-- footnotetext without number is from                                     -->

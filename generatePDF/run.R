@@ -18,14 +18,20 @@ sampleID <- config %>% select(sampleID) %>% pull() %>% as.character()
 institution <- config %>% select(institution) %>% pull() %>% as.character()
 institutionAddress <- config %>% select(institutionAddress) %>% pull() %>% as.character()
 outputDir <- config %>% select(outputDir) %>% pull() %>% normalizePath()
+detectorFile <- config %>% select(detectorFile) %>% pull()
+assesserFile <- config %>% select(assesserFile) %>% pull()
 
 render_to_pdf_report(referenceIndicatorFile = referenceIndicatorFile, 
-                                 rowNumber = rowNumber,
-                                 translationFile = translationFile,
-                                 indicatorResultFile = indicatorResultFile,
-                                 sampleID = sampleID,
-                                 clinicalInfoFile = clinicalInfoFile,
-                                 institution = institution,
-                                 institutionAddress = institutionAddress,
-                                 outputDir = outputDir)
+                     rowNumber = rowNumber,
+                     translationFile = translationFile,
+                     indicatorResultFile = indicatorResultFile,
+                     sampleID = sampleID,
+                     clinicalInfoFile = clinicalInfoFile,
+                     institution = institution,
+                     institutionAddress = institutionAddress,
+                     outputDir = outputDir,
+                     detectorFile = detectorFile,
+                     assesserFile = assesserFile)
  
+
+

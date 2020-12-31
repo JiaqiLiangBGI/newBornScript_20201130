@@ -163,13 +163,35 @@ render_to_pdf_report <- function(referenceIndicatorFile = reference,
         mutate(`样本编码` = str_replace(`样本编码`,"_","\\\\_")) %>%
         pivot_wider(names_from = "indicator",
                     values_from = "values")
-      render_single_pdf(select_clinicalData,
+        # mutate(`结果` = map_chr(.x = `结果`,.f = ~if_else(nchar(.x) < 45,str_pad(.x,width = 1,side = "right",pad = "\n "),.x)),
+        #        `分析` = map_chr(.x = `分析`,.f = ~if_else(nchar(.x) < 45,str_pad(.x,width = 1,side = "right",pad = "\n "),.x)))
+     resultWidth <- nchar(select_analysisData$`结果`,type = "width")
+     analysisWidth <- nchar(select_analysisData$`分析`,type = "width")
+     if (resultWidth > 174) {
+       if (analysisWidth > 84) {
+         warning(paste0(paste(select_clinicalData$母亲姓名,select_sampleID,sep = "-"),",beyond the page"))
+       }
+     } else if (resultWidth > 84) {
+       if (analysisWidth > 174) {
+         warning(paste0(paste(select_clinicalData$母亲姓名,select_sampleID,sep = "-"),",beyond the page"))
+       } else if (analysisWidth <= 84) {
+         select_analysisData$`分析` <- paste0(select_analysisData$`分析`,"\\")
+       }
+     } else {
+       if (analysisWidth <= 84) {
+         select_analysisData$`分析` <- paste0(select_analysisData$`分析`,"\\")
+         select_analysisData$`结果` <- paste0(select_analysisData$`结果`,"\\")
+       } else if (analysisWidth <= 174) {
+         select_analysisData$`结果` <- paste0(select_analysisData$`结果`,"\\")
+       }
+     }
+       render_single_pdf(select_clinicalData,
                         select_column1Data,
                         select_column2Data,
                         select_analysisData,
                         institution,
                         institutionAddress,
-                        paste0(select_sampleID, ".pdf"),
+                        paste0(paste(select_clinicalData$母亲姓名,select_sampleID,sep = "-"), ".pdf"),
                         outputDir,detectorFile,assesserFile)
     }
   }else if(sampleID %in% clinicalInfo$`样本编码`){
@@ -213,13 +235,36 @@ render_to_pdf_report <- function(referenceIndicatorFile = reference,
       mutate(`样本编码` = str_replace(`样本编码`,"_","\\\\_")) %>%
       pivot_wider(names_from = "indicator",
                   values_from = "values") 
+      # mutate(`结果` = map_chr(.x = `结果`,.f = ~if_else(nchar(.x) < 45,str_pad(.x,1,side = "right",pad = "\n "),.x)),
+      #        `分析` = map_chr(.x = `分析`,.f = ~if_else(nchar(.x) < 45,str_pad(.x,1,side = "right",pad = "\n "),.x)))
+    resultWidth <- nchar(select_analysisData$`结果`,type = "width")
+    analysisWidth <- nchar(select_analysisData$`分析`,type = "width")
+    if (resultWidth > 174) {
+      if (analysisWidth > 84) {
+        warning(paste0(paste(select_clinicalData$母亲姓名,sampleID,sep = "-"),",beyond the page"))
+      }
+    } else if (resultWidth > 84) {
+      if (analysisWidth > 174) {
+        warning(paste0(paste(select_clinicalData$母亲姓名,sampleID,sep = "-"),",beyond the page"))
+      } else if (analysisWidth <= 84) {
+        select_analysisData$`分析` <- paste0(select_analysisData$`分析`,"\\")
+      }
+    } else {
+      if (analysisWidth <= 84) {
+        select_analysisData$`分析` <- paste0(select_analysisData$`分析`,"\\")
+        select_analysisData$`结果` <- paste0(select_analysisData$`结果`,"\\")
+      } else if (analysisWidth <= 174) {
+        select_analysisData$`结果` <- paste0(select_analysisData$`结果`,"\\")
+      }
+    }
     render_single_pdf(select_clinicalData,
                       select_column1Data,
                       select_column2Data,
                       select_analysisData,
                       institution,
                       institutionAddress,
-                      paste0(sampleID, ".pdf"),
+                      paste0(paste(select_clinicalData$母亲姓名,sampleID,sep = "-"), ".pdf"),
+                      #paste0(sampleID, ".pdf"),
                       outputDir,detectorFile,assesserFile)
   }else{
     stop(paste0("没有找到",sampleID,"的数据！"))

@@ -102,16 +102,12 @@ kable(total_table, format = "latex", longtable = TRUE, booktabs = TRUE, linesep 
     column_spec(c(3,7), width = "0.1cm") %>%
     #column_spec(c(2,7), width = "1.2cm") %>%
     column_spec(c(2,6), width = "1.5cm")
-  
 ```
+\zihao{5}\textbf{结果：} \zihao{5}`r select_analysisData$"结果"`
+
+\zihao{5}\textbf{分析：} \zihao{5}`r select_analysisData$"分析"` 
+\vspace*{1\baselineskip} 
 \zihao{5}
-\textbf{结果：} `r select_analysisData$"结果"`
-
-\vspace*{1\baselineskip} 
-
-\textbf{分析：} `r select_analysisData$"分析"` 
-\vspace*{1\baselineskip} 
-
 \begin{tabu} to \linewidth {>{\raggedright}X>{\raggedright}X>{\raggedright}X>{\raggedright}X>{\raggedright}X>{\raggedright}X}
 \textbf{检测人：} & \graphicspath{{`r normalize_path(detectorFile)`}}\includegraphics{`r str_split(basename(detectorFile),"\\.")[[1]][1]`} & \textbf{审核人：} & \graphicspath{{`r normalize_path(assesserFile)`}}\includegraphics{`r str_split(basename(assesserFile),"\\.")[[1]][1]`} & \textbf{报告日期：} & {`r Sys.Date()`}\\
 \end{tabu}

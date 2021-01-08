@@ -55,7 +55,7 @@ render_to_pdf_report <- function(referenceIndicatorFile = reference,
   reference_indicator <- reference_tibble %>% pull(...2) %>% rev()
   # cut into 2 column
   reference_indicator_column1 <- reference_indicator[seq(1,rowNumber)]
-  reference_indicator_column2 <- reference_indicator[seq(rowNumber,length(reference_indicator))]
+  reference_indicator_column2 <- reference_indicator[seq((rowNumber + 1),length(reference_indicator))]
   
   # read Chinese-English ref
   translation_info <- read_xlsx(translationFile, sheet = 1) %>%
@@ -64,9 +64,15 @@ render_to_pdf_report <- function(referenceIndicatorFile = reference,
   
   # combine Chinese-English ref and indicators list
   reference_indicator_column1_final <- translation_info %>%
-    filter(indicator %in% reference_indicator_column1)
+    filter(indicator %in% reference_indicator_column1) %>%
+    mutate(indicator = if_else(indicator == "C18:2-OH","C18:2OH",
+                          if_else(indicator == "C18:1-OH","C18:1OH",
+                                  if_else(indicator == "C16:1-OH","C16:1OH",indicator))))
   reference_indicator_column2_final <- translation_info %>%
-    filter(indicator %in% reference_indicator_column2)
+    filter(indicator %in% reference_indicator_column2) %>%
+    mutate(indicator = if_else(indicator == "C18:2-OH","C18:2OH",
+                               if_else(indicator == "C18:1-OH","C18:1OH",
+                                       if_else(indicator == "C16:1-OH","C16:1OH",indicator))))
   
   # calculate_data <- "./prepare/imresult2.csv"
   totalData <- read_csv(indicatorResultFile,
@@ -94,17 +100,20 @@ render_to_pdf_report <- function(referenceIndicatorFile = reference,
     pivot_longer(names_to = "indicator",
                  values_to = "values",-`样本编码`) %>%
     filter(!(indicator %in% c("结果", "分析"))) %>%
-    mutate(`样本编码` = map_chr(.x = `样本编码`,.f = ~if_else(str_detect(.x,"-"),str_split(.x,"-")[[1]][2],.x)))
+    mutate(`样本编码` = map_chr(.x = `样本编码`,
+                            .f = ~if_else(str_detect(.x,"^[0-9]{8}-"),str_replace(.x,"^[0-9]{8}-",""),.x)))
     
   column1_final <- left_join(reference_indicator_column1_final, sampleData, by = "indicator") %>%
     left_join(., rangeData, by = c("indicator"))
   column2_final <- left_join(reference_indicator_column2_final, sampleData, by = "indicator") %>%
     left_join(., rangeData, by = c("indicator")) 
   
-  analysisData <- sampleData <- totalData %>% tail(-2) %>%
+  analysisData <-  totalData %>% tail(-2) %>%
     pivot_longer(names_to = "indicator",
                  values_to = "values",-`样本编码`) %>%
-    filter(indicator %in% c("结果", "分析"))
+    filter(indicator %in% c("结果", "分析")) %>%
+    mutate(`样本编码` = map_chr(.x = `样本编码`,
+                            .f = ~if_else(str_detect(.x,"^[0-9]{8}-"),str_replace(.x,"^[0-9]{8}-",""),.x)))
   
   # read in clinical info
   clinicalInfo <- read_xlsx(clinicalInfoFile, sheet = 1, skip = 1,
@@ -119,18 +128,22 @@ render_to_pdf_report <- function(referenceIndicatorFile = reference,
     pivot_longer(names_to = "clinicalInfo",
                  values_to = "values",
                  -1) %>%
-    mutate(`样本编码` = map_chr(.x = `样本编码`,.f = ~if_else(str_detect(.x,"-"),str_split(.x,"-")[[1]][2],.x)))
+    mutate(`样本编码` = map_chr(.x = `样本编码`,
+                            .f = ~if_else(str_detect(.x,"^[0-9]{8}-"),str_replace(.x,"^[0-9]{8}-",""),.x)))
   
   # data prepare ends
   if(sampleID=='all'){
     for(select_sampleID in unique(clinicalInfo$`样本编码`)){
       select_clinicalData <- clinicalInfo %>%
         filter(`样本编码`==select_sampleID) %>%
+        #filter(`样本编码`=="19S1664764") %>%
         mutate(`样本编码` = str_replace(`样本编码`,"_","\\\\_"),
                `values` = str_replace(`values`,"_","\\\\_")) %>%
         pivot_wider(names_from = "clinicalInfo",
                     values_from = "values") %>%
-        mutate(`实验编号` = map_chr(.x = `实验编号`,.f = ~if_else(str_detect(.x,"-"),str_split(.x,"-")[[1]][2],.x)))
+        mutate(`实验编号` = map_chr(.x = `实验编号`,
+                                .f = ~if_else(str_detect(.x,"^[0-9]{8}-"),str_replace(.x,"^[0-9]{8}-",""),.x)))
+        #mutate(`实验编号` = map_chr(.x = `实验编号`,.f = ~if_else(str_detect(.x,"-"),str_split(.x,"-")[[1]][2],.x)))
 
       select_column1Data <- column1_final %>%
         filter(`样本编码` == select_sampleID) %>%
@@ -202,7 +215,9 @@ render_to_pdf_report <- function(referenceIndicatorFile = reference,
              `values` = str_replace(`values`,"_","\\\\_")) %>%
       pivot_wider(names_from = "clinicalInfo",
                   values_from = "values") %>%
-      mutate(`实验编号` = map_chr(.x = `实验编号`,.f = ~if_else(str_detect(.x,"-"),str_split(.x,"-")[[1]][2],.x)))
+      mutate(`实验编号` = map_chr(.x = `实验编号`,
+                              .f = ~if_else(str_detect(.x,"^[0-9]{8}-"),str_replace(.x,"^[0-9]{8}-",""),.x)))
+      #mutate(`实验编号` = map_chr(.x = `实验编号`,.f = ~if_else(str_detect(.x,"-"),str_split(.x,"-")[[1]][2],.x)))
     
     select_column1Data <- column1_final %>%
       filter(`样本编码` == sampleID) %>%

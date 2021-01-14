@@ -258,10 +258,11 @@ server <- function(input,output) {
   # })
   output$downloadData <- downloadHandler(
     filename = function() {
-      paste("TKI", ".tsv", sep = "")
+      paste("TKI", ".txt", sep = "")
     },
     content = function(file) {
-      write_tsv(tranferFormat(file = input$TKI_file$datapath,date = input$date), file, col_names = FALSE)
+      write.table(tranferFormat(file = input$TKI_file$datapath,date = input$date), file, sep="\t",row.names = F,col.names = F,quote=F)
+      #write_tsv(tranferFormat(file = input$TKI_file$datapath,date = input$date), file, col_names = FALSE)
     }
   )
 }
